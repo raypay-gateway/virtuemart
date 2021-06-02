@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<extension version="3.6" type="plugin" group="vmpayment" method="upgrade">
+    <name>RayPay for Virtuemart</name>
+    <version>1.0</version>
+    <description>RayPay payment gateway for Virtuemart</description>
+    <author>hanieh729 , Publisher: Saminray</author>
+    <authorUrl>https://saminray.com</authorUrl>
+    <authorEmail>info@saminray.com</authorEmail>
+    <creationDate>Jun 2021</creationDate>
+    <copyright>Copyright (C) 2021 RayPay</copyright>
+    <license>http://www.gnu.org/licenses/gpl-2.0.html GPLv2 or later</license>
+
+    <files>
+        <filename plugin="raypay_virtuemart">raypay_virtuemart.php</filename>
+        <folder>raypay_virtuemart</folder>
+    </files>
+
+    <updateservers>
+        <server type="extension" priority="1" name="VM Payment - RayPay for Virtuemart">https://raypay.ir/Plugins</server>
+    </updateservers>
+
+    <vmconfig>
+        <fields name="params">
+            <fieldset name="payment" addfieldpath="/administrator/components/com_virtuemart/fields">
+                <field name="user_id" type="text" size="40" label="شناسه کاربری" description="شناسه کاربری خود را از پنل رای پی دریافت کنید." default="20064"/>
+                <field name="acceptor_code" type="text" size="40" label="کد پذیرنده" description="کد پذیرنده خود را از پنل رای پی دریافت کنید." default="220000000003751"/>
+<!--                <field name="success_massage" type="text" size="40" label="پیام پرداخت موفق" description="متن پیامی که می خواهید بعد از پرداخت موفق به کاربر نمایش دهید را وارد کنید. همچنین می توانید از شورت کدهای {order_id} برای نمایش شماره سفارش و {track_id} برای نمایش کد رهگیری آیدی پی استفاده نمایید." default="پرداخت شما با موفقیت انجام شد. کد رهگیری: {track_id}"/>-->
+<!--                <field name="failed_massage" type="text" size="40" label="پیام پرداخت ناموفق" description="متن پیامی که می خواهید بعد از پرداخت ناموفق به کاربر نمایش دهید را وارد کنید. همچنین می توانید از شورت کدهای {order_id} برای نمایش شماره سفارش و {track_id} برای نمایش کد رهگیری آیدی پی استفاده نمایید." default="پرداخت شما ناموفق بوده است. لطفا مجددا تلاش نمایید یا در صورت بروز اشکال با مدیر سایت تماس بگیرید."/>-->
+            </fieldset>
+        </fields>
+    </vmconfig>
+</extension>
