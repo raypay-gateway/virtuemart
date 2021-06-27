@@ -47,17 +47,6 @@ class plgVmPaymentRayPay_virtuemart extends vmPSPlugin
 	}
 
 	/**
-	 * @return array
-	 */
-	public function options()
-	{
-		$options = array('Content-Type' => 'application/json',
-		);
-
-		return $options;
-	}
-
-	/**
 	 * @return mixed
 	 */
 	public function getVmPluginCreateTableSQL()
@@ -141,7 +130,7 @@ class plgVmPaymentRayPay_virtuemart extends vmPSPlugin
 		$phone = $order['details']['BT']->phone_2;
 		$mail  = $order['details']['BT']->email;
 
-		$url  = 'http://185.165.118.211:14000/raypay/api/v1/Payment/getPaymentTokenWithUserID';
+		$url  = 'https://api.raypay.ir/raypay/api/v1/Payment/getPaymentTokenWithUserID';
 
 		$data = array(
 			'amount'       => strval($amount),
@@ -157,10 +146,20 @@ class plgVmPaymentRayPay_virtuemart extends vmPSPlugin
 		);
 
 
-		$options     = $this->options();
-		$result      = $this->http->post($url, json_encode($data, true), $options);
-		$result      = json_decode($result->body);
-		$http_status = $result->StatusCode;
+		// $options     = $this->options();
+		// $result      = $this->http->post($url, json_encode($data, true), $options);
+		// $result      = json_decode($result->body);
+		// $http_status = $result->StatusCode;
+		$options = array('Content-Type: application/json');
+		$ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+        curl_setopt($ch, CURLOPT_HTTPHEADER,$options );
+        $result = curl_exec($ch);
+        $result = json_decode($result );
+        $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
 
 		//insert raypay table jnfo
 		$dbValues['payment_name']                = $this->renderPluginName($method) . '<br />';
@@ -258,11 +257,21 @@ class plgVmPaymentRayPay_virtuemart extends vmPSPlugin
 					$data        = array(
 						'order_id' => $order_id,
 					);
-					$url         = 'http://185.165.118.211:14000/raypay/api/v1/Payment/checkInvoice?pInvoiceID=' . $invoice_id;
-					$options     = $this->options();
-					$result      = $this->http->post($url, json_encode($data, true), $options);
-					$result      = json_decode($result->body);
-					$http_status = $result->StatusCode;
+					$url         = 'https://api.raypay.ir/raypay/api/v1/Payment/checkInvoice?pInvoiceID=' . $invoice_id;
+					$options = array('Content-Type: application/json');
+					$ch = curl_init();
+					curl_setopt($ch, CURLOPT_URL, $url);
+					curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+					curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+					curl_setopt($ch, CURLOPT_HTTPHEADER,$options );
+					$result = curl_exec($ch);
+					$result = json_decode($result );
+					$http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+					curl_close($ch);
+					// $options     = $this->options();
+					// $result      = $this->http->post($url, json_encode($data, true), $options);
+					// $result      = json_decode($result->body);
+					// $http_status = $result->StatusCode;
 					if ($http_status != 200)
 					{
 						$msg  = sprintf('خطا هنگام بررسی وضعیت تراکنش. وضعیت خطا: %s - پیام خطا: %s', $http_status, $result->Message);
@@ -276,11 +285,11 @@ class plgVmPaymentRayPay_virtuemart extends vmPSPlugin
 
 					if ($state === 1)
 					{
-						$verify_status = 'پرداخت موفق';
+						$verify_status = ' پرداخت موفق ';
 					}
 					else
 					{
-						$verify_status = 'پرداخت ناموفق';
+						$verify_status = '  پرداخت ناموفق ';
 					}
 
 
@@ -299,7 +308,7 @@ class plgVmPaymentRayPay_virtuemart extends vmPSPlugin
 							'status'       => $msg
 						));
 
-						$msgForSaveDataTDataBase = "شماره ارجاع بانکی رای پی : " . $invoice_id;
+						$msgForSaveDataTDataBase = " شناسه ارجاع بانکی رای پی : " . $invoice_id;
 						$this->updateStatus('C', 1, $msgForSaveDataTDataBase, $id);
 						$this->updateOrderInfo($id, sprintf('وضعیت پرداخت تراکنش: %s', $verify_status));
 						vRequest::setVar('html', $html);
