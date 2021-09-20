@@ -23,7 +23,8 @@
         <fields name="params">
             <fieldset name="payment" addfieldpath="/administrator/components/com_virtuemart/fields">
                 <field name="user_id" type="text" size="40" label="شناسه کاربری" description="شناسه کاربری خود را از پنل رای پی دریافت کنید." default="20064"/>
-                <field name="acceptor_code" type="text" size="40" label="کد پذیرنده" description="کد پذیرنده خود را از پنل رای پی دریافت کنید." default="220000000003751"/>
+                <field name="marketing_id" type="text" size="40" label="شناسه کسب و کار" description="شناسه کسب و کار خود را از پنل رای پی دریافت کنید." default="10070"/>
+                <field name="sandbox" type="checkbox" default="0" label="فعالسازی SandBox" description="با انتخاب این گزینه، پرداخت در محیط تست رای پی انجام می شود."/>
 <!--                <field name="success_massage" type="text" size="40" label="پیام پرداخت موفق" description="متن پیامی که می خواهید بعد از پرداخت موفق به کاربر نمایش دهید را وارد کنید. همچنین می توانید از شورت کدهای {order_id} برای نمایش شماره سفارش و {track_id} برای نمایش کد رهگیری آیدی پی استفاده نمایید." default="پرداخت شما با موفقیت انجام شد. کد رهگیری: {track_id}"/>-->
 <!--                <field name="failed_massage" type="text" size="40" label="پیام پرداخت ناموفق" description="متن پیامی که می خواهید بعد از پرداخت ناموفق به کاربر نمایش دهید را وارد کنید. همچنین می توانید از شورت کدهای {order_id} برای نمایش شماره سفارش و {track_id} برای نمایش کد رهگیری آیدی پی استفاده نمایید." default="پرداخت شما ناموفق بوده است. لطفا مجددا تلاش نمایید یا در صورت بروز اشکال با مدیر سایت تماس بگیرید."/>-->
             </fieldset>

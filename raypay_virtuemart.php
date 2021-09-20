@@ -42,7 +42,7 @@ class plgVmPaymentRayPay_virtuemart extends vmPSPlugin
 		$this->tableFields = array_keys($this->getTableSQLFields());
 		$this->_tablepkey  = 'id';
 		$this->_tableId    = 'id';
-		$varsToPush        = array('user_id' => array('', 'varchar'), 'acceptor_code' => array('', 'varchar'));
+		$varsToPush        = array('user_id' => array('', 'varchar'), 'sandbox' => array(0, 'int'), 'marketing_id' => array('', 'varchar'));
 		$this->setConfigParameterable($this->_configTableFieldName, $varsToPush);
 	}
 
@@ -111,12 +111,12 @@ class plgVmPaymentRayPay_virtuemart extends vmPSPlugin
 		$email_currency         = $this->getEmailCurrency($method);
 		$app                    = JFactory::getApplication();
 		$user_id                = $method->user_id;
-		$acceptor_code          = $method->acceptor_code;
+		$marketing_id          = $method->marketing_id;
+        $sandbox = !($method->sandbox == 0);
 		$amount                 = $totalInPaymentCurrency['value'];
 		$invoice_id             = round(microtime(true) * 1000);
 		$desc                   = 'خرید محصول از فروشگاه   ' . $cart->vendor->vendor_store_name;
 		$callback               = JURI::root() . 'index.php?option=com_virtuemart&view=pluginresponse&task=pluginresponsereceived&gw=RayPay';
-		$callback               .= '&';
 
 		if (empty($amount))
 		{
@@ -130,7 +130,7 @@ class plgVmPaymentRayPay_virtuemart extends vmPSPlugin
 		$phone = $order['details']['BT']->phone_2;
 		$mail  = $order['details']['BT']->email;
 
-		$url  = 'https://api.raypay.ir/raypay/api/v1/Payment/getPaymentTokenWithUserID';
+		$url  = 'https://api.raypay.ir/raypay/api/v1/Payment/pay';
 
 		$data = array(
 			'amount'       => strval($amount),
@@ -138,11 +138,12 @@ class plgVmPaymentRayPay_virtuemart extends vmPSPlugin
 			'userID'       => $user_id,
 			'redirectUrl'  => $callback,
 			'factorNumber' => strval($order['details']['BT']->order_number),
-			'acceptorCode' => $acceptor_code,
+			'marketingID' => $marketing_id,
 			'email'        => $mail,
 			'mobile'       => $phone,
 			'fullName'     => $name,
-			'comment'      => $desc
+			'comment'      => $desc,
+            'enableSandBox'      => $sandbox
 		);
 
 
@@ -184,17 +185,10 @@ class plgVmPaymentRayPay_virtuemart extends vmPSPlugin
 			$app->redirect($link, '<h2>' . $msg . '</h2>', $msgType = 'Error');
 		}
 
-		$access_token = $result->Data->Accesstoken;
-		$terminal_id  = $result->Data->TerminalID;
-
-	    echo '<p style="color:#ff0000; font:18px Tahoma; direction:rtl;">در حال اتصال به درگاه بانکی. لطفا صبر کنید ...</p>';
-		echo '<form name="frmRayPayPayment" method="post" action=" https://mabna.shaparak.ir:8080/Pay ">';
-        echo '<input type="hidden" name="TerminalID" value="' . $terminal_id . '" />';
-        echo '<input type="hidden" name="token" value="' . $access_token . '" />';
-        echo '<input class="submit" type="submit" value="پرداخت" /></form>';
-        echo '<script>document.frmRayPayPayment.submit();</script>';
-
-        return false;
+		$token = $result->Data;
+        $link='https://my.raypay.ir/ipg?token=' . $token;
+        Header('Location: ' . $link);
+        return False;
     }
 
 	/**
@@ -208,11 +202,13 @@ class plgVmPaymentRayPay_virtuemart extends vmPSPlugin
 		{
 			require(VMPATH_ADMIN . DS . 'models' . DS . 'orders.php');
 		}
+        if (!class_exists('VirtueMartCart')) {
+            require JPATH_VM_SITE.DS.'helpers'.DS.'cart.php';
+        }
 
 		$app        = JFactory::getApplication();
 		$jinput     = $app->input;
 		$gateway    = $jinput->get->get('gw', '', 'STRING');
-		$invoice_id = $jinput->get->get('?invoiceID', '', 'STRING');
 
 		if ($gateway == 'RayPay')
 		{
@@ -252,16 +248,13 @@ class plgVmPaymentRayPay_virtuemart extends vmPSPlugin
 
 			if (JUserHelper::verifyPassword($id, $uId))
 			{
-				if (!empty($invoice_id))
+				if (!empty($orderInfo))
 				{
-					$data        = array(
-						'order_id' => $order_id,
-					);
-					$url         = 'https://api.raypay.ir/raypay/api/v1/Payment/checkInvoice?pInvoiceID=' . $invoice_id;
+					$url         = 'https://api.raypay.ir/raypay/api/v1/Payment/verify';
 					$options = array('Content-Type: application/json');
 					$ch = curl_init();
 					curl_setopt($ch, CURLOPT_URL, $url);
-					curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+					curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($_POST));
 					curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
 					curl_setopt($ch, CURLOPT_HTTPHEADER,$options );
 					$result = curl_exec($ch);
@@ -279,8 +272,9 @@ class plgVmPaymentRayPay_virtuemart extends vmPSPlugin
 						$app->redirect($link, '<h2>' . $msg . '</h2>', $msgType = 'Error');
 					}
 
-					$state           = $result->Data->State;
+					$state           = $result->Data->Status;
 					$verify_order_id = $result->Data->FactorNumber;
+                    $verify_invoice_id = $result->Data->InvoiceID;
 					$verify_amount   = $result->Data->Amount;
 
 					if ($state === 1)
@@ -302,17 +296,17 @@ class plgVmPaymentRayPay_virtuemart extends vmPSPlugin
 					else
 					{
 						$msg  = 'پرداخت شما با موفقیت انجام شد.';
+                        $app->enqueueMessage($msg);
 						$html = $this->renderByLayout('raypay_virtuemart', array(
 							'order_number' => $order_id,
 							'order_pass'   => $pass_id,
 							'status'       => $msg
 						));
 
-						$msgForSaveDataTDataBase = " شناسه ارجاع بانکی رای پی : " . $invoice_id;
-						$this->updateStatus('C', 1, $msgForSaveDataTDataBase, $id);
+						$msgForSaveDataTDataBase = " شناسه ارجاع بانکی رای پی : " . $verify_invoice_id;
+						$this->updateStatus('C', 0, $msgForSaveDataTDataBase, $id);
 						$this->updateOrderInfo($id, sprintf('وضعیت پرداخت تراکنش: %s', $verify_status));
 						vRequest::setVar('html', $html);
-						JFactory::getApplication()->enqueueMessage($msg);
 						$cart = VirtueMartCart::getCart();
 						$cart->emptyCart();
 						$session->clear('raypay');
